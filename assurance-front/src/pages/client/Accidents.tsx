@@ -1,4 +1,17 @@
-import { Stack, Typography, Grid, Paper } from "@mui/material";
+// src/pages/client/Accidents.tsx
+import {
+  Stack,
+  Typography,
+  Grid,
+  Paper,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -13,10 +26,11 @@ import AccidentCreate from "./AccidentCreate";
 
 export default function Accidents() {
   const [search, setSearch] = useState("");
+  const [openCreate, setOpenCreate] = useState(false);
 
   const accidentsQuery = useQuery({
     queryKey: ["myAccidents"],
-    queryFn: claimService.getMyAccidents, // ✅ ICI
+    queryFn: claimService.getMyAccidents,
   });
 
   const rows = accidentsQuery.data ?? [];
@@ -51,8 +65,25 @@ export default function Accidents() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4">Mes accidents</Typography>
+      {/* Header + action */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        alignItems={{ xs: "stretch", sm: "center" }}
+        justifyContent="space-between"
+        spacing={1.5}
+      >
+        <Typography variant="h4">Mes accidents</Typography>
 
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setOpenCreate(true)}
+        >
+          Déclarer un accident
+        </Button>
+      </Stack>
+
+      {/* Stats */}
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Paper sx={{ p: 2 }}>
@@ -62,17 +93,15 @@ export default function Accidents() {
             <Typography variant="h4">{rows.length}</Typography>
           </Paper>
         </Grid>
-         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AccidentCreate></AccidentCreate>
-        </Grid>
       </Grid>
 
+      {/* Search + table */}
       <Paper sx={{ p: 2 }}>
         <Stack spacing={2}>
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Rechercher par date, véhicule..."
+            placeholder="Rechercher par date, véhicule, lieu..."
           />
 
           {filtered.length === 0 ? (
@@ -82,6 +111,32 @@ export default function Accidents() {
           )}
         </Stack>
       </Paper>
+
+      {/* Modal create */}
+      <Dialog
+        open={openCreate}
+        onClose={() => setOpenCreate(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle sx={{ pr: 6 }}>
+          Déclarer un accident
+          <IconButton
+            onClick={() => setOpenCreate(false)}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {/* IMPORTANT: AccidentCreate est une "page"
+              => si tu peux, enlève son <Typography variant="h4"> à l’intérieur
+              ou crée AccidentCreateForm (recommandé).
+           */}
+          <AccidentCreate />
+        </DialogContent>
+      </Dialog>
     </Stack>
   );
 }

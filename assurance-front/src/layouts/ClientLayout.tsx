@@ -36,7 +36,6 @@ export default function ClientLayout() {
               <Button component={Link} to="/client/vehicles" variant="text">Véhicules</Button>
               <Button component={Link} to="/client/contracts" variant="text">Contrats</Button>
               <Button component={Link} to="/client/accidents" variant="text">Accidents</Button>
-              <Button component={Link} to="/client/profile" variant="text">Profil</Button>
 
               <Button onClick={onLogout} variant="contained">
                 Déconnexion
