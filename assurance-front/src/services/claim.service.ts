@@ -1,13 +1,18 @@
 // src/services/claim.service.ts
 import { api } from "../api/axios";
 
-export type ClaimStatus = "PENDING" | "DECLARED" | "IN_PROGRESS" | "RESOLVED" | "REJECTED";
+export type ClaimStatus =
+  | "PENDING"
+  | "DECLARED"
+  | "IN_PROGRESS"
+  | "RESOLVED"
+  | "REJECTED";
 
 export type ClaimDto = {
   id: number;
-  claimNumber: string | null;
+  claimNumber: number | null;
   status: ClaimStatus;
-  accidentDate: string;
+  accidentDate: string;     // "YYYY-MM-DD"
   location: string;
   description: string;
   vehicleMatricule: string | null;
@@ -24,7 +29,7 @@ export type DocumentDto = {
   id: number;
   fileName: string;
   contentType: string;
-  uploadedAt: string;
+  uploadedAt: string | null;
 };
 
 async function getMyClaims(): Promise<ClaimDto[]> {
@@ -32,15 +37,28 @@ async function getMyClaims(): Promise<ClaimDto[]> {
   return data;
 }
 
-async function createWithRequiredDoc(payload: CreateClaimPayload, file: File): Promise<ClaimDto> {
-  const form = new FormData();
-  form.append("data", JSON.stringify(payload));
-  form.append("file", file);
-
-  const { data } = await api.post("/clients/me/claims", form);
+// alias accidents = claims
+async function getMyAccidents(): Promise<ClaimDto[]> {
+  const { data } = await api.get("/clients/me/claims");
   return data;
 }
 
+// IMPORTANT: envoie data en JSON Blob => Spring @RequestPart("data") marche bien
+async function createWithRequiredDoc(payload: CreateClaimPayload, file: File): Promise<ClaimDto> {
+  const form = new FormData();
+
+  form.append(
+    "data",
+    new Blob([JSON.stringify(payload)], { type: "application/json" })
+  );
+  form.append("file", file);
+
+  const { data } = await api.post("/clients/me/claims", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return data;
+}
 
 async function listDocuments(claimId: number): Promise<DocumentDto[]> {
   const { data } = await api.get(`/clients/me/claims/${claimId}/documents`);
@@ -65,15 +83,11 @@ async function uploadDocument(claimId: number, file: File): Promise<DocumentDto>
   return data;
 }
 
-
 export const claimService = {
   getMyClaims,
+  getMyAccidents,
   createWithRequiredDoc,
   listDocuments,
   downloadDocument,
   uploadDocument,
-  async getMyAccidents(): Promise<ClaimDto[]> {
-    const { data } = await api.get("/clients/me/claims");
-    return data;
-  }
 };
