@@ -51,8 +51,30 @@ export const adminService = {
   },
 
   async downloadContractPdf(num: string) {
-    const { data } = await api.get(`/admin/contracts/${encodeURIComponent(num)}/pdf`, { responseType: 'arraybuffer' });
+    const res = await api.get(`/admin/contracts/${encodeURIComponent(num)}/pdf`, { responseType: 'arraybuffer' });
+    const contentType = res.headers['content-type'] || 'application/pdf';
+    const cd = res.headers['content-disposition'] || '';
+    let fileName = 'contract.pdf';
+    const m = /filename="?([^";]+)"?/.exec(cd);
+    if (m) fileName = m[1];
+    return { data: res.data, contentType, fileName };
+  }
+  ,
+
+  // Claim documents
+  async listClaimDocuments(id: string | number): Promise<any[]> {
+    const { data } = await api.get<any[]>(`/admin/claims/${id}/documents`);
     return data;
+  },
+
+  async downloadClaimDocument(id: string | number, docId: string | number) {
+    const res = await api.get(`/admin/claims/${id}/documents/${docId}`, { responseType: 'arraybuffer' });
+    const contentType = res.headers['content-type'] || 'application/octet-stream';
+    const cd = res.headers['content-disposition'] || '';
+    let fileName = 'document';
+    const m = /filename="?([^";]+)"?/.exec(cd);
+    if (m) fileName = m[1];
+    return { data: res.data, contentType, fileName };
   }
 };
 

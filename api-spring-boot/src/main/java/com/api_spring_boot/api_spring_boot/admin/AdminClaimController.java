@@ -127,6 +127,44 @@ public class AdminClaimController {
 		docRepo.save(doc);
 	}
 
+	    @GetMapping("/{id}/documents")
+	    public List<com.api_spring_boot.api_spring_boot.claims.dto.DocumentDto> listDocuments(@PathVariable Long id) {
+		Claim claim = claimRepo.findById(id)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Claim introuvable"));
+
+		return docRepo.findByClaimOrderByUploadedAtDesc(claim)
+			.stream()
+			.map(d -> new com.api_spring_boot.api_spring_boot.claims.dto.DocumentDto(
+				d.getId(),
+				d.getFileName(),
+				d.getContentType(),
+				d.getUploadedAt() == null ? null : d.getUploadedAt().toString()
+			))
+			.toList();
+	    }
+
+	    @GetMapping("/{id}/documents/{docId}")
+	    public ResponseEntity<byte[]> downloadDocument(@PathVariable Long id, @PathVariable Long docId) {
+		Claim claim = claimRepo.findById(id)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Claim introuvable"));
+
+		ClaimDocument doc = docRepo.findById(docId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
+
+		if (doc.getClaim() == null || !doc.getClaim().getId().equals(claim.getId())) {
+		    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mauvais document");
+		}
+
+		MediaType mediaType;
+		try { mediaType = MediaType.parseMediaType(doc.getContentType()); }
+		catch (Exception e) { mediaType = MediaType.APPLICATION_OCTET_STREAM; }
+
+		return ResponseEntity.ok()
+			.contentType(mediaType)
+			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + safeFilename(doc.getFileName()) + "\"")
+			.body(doc.getData());
+	    }
+
 	private AdminClaimDto toDto(Claim c) {
 		return new AdminClaimDto(
 				c.getId(),
@@ -138,5 +176,10 @@ public class AdminClaimController {
 				c.getVehicle() == null ? null : c.getVehicle().getMatricule(),
 				c.getClient() == null ? null : c.getClient().getEmail()
 		);
+	}
+
+	private String safeFilename(String name) {
+		if (name == null) return "file";
+		return name.replaceAll("[\\r\\n\"]", "_");
 	}
 }

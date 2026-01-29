@@ -49,6 +49,22 @@ export default function AdminContracts() {
         <Stack direction="row" spacing={1}>
           <Button size="small" onClick={() => validateMutation.mutate(c.numContrat ?? c.num)}>Valider</Button>
           <Button size="small" color="error" onClick={() => rejectMutation.mutate(c.numContrat ?? c.num)}>Rejeter</Button>
+          <Button size="small" onClick={async () => {
+            try {
+              const res = await adminService.downloadContractPdf(c.numContrat ?? c.num);
+              const blob = new Blob([res.data], { type: res.contentType });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = res.fileName || 'contract.pdf';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            } catch (e) {
+              // ignore for now
+            }
+          }}>Télécharger PDF</Button>
         </Stack>
       ),
     },

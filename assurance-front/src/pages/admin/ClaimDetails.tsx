@@ -18,6 +18,7 @@ import SkeletonTable from "../../components/SkeletonTable";
 import ErrorState from "../../components/ErrorState";
 import StatusChip from "../../components/StatusChip";
 import TimelineSteps from "../../components/TimelineSteps";
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 
 import type { ClaimStatus } from "../../types/claim";
 import type { StepStatus } from "../../types/claimStep";
@@ -51,6 +52,12 @@ export default function AdminClaimDetails() {
     enabled: !!claimId,
   });
 
+  const docsQuery = useQuery({
+    queryKey: ["adminClaimDocs", claimId],
+    queryFn: () => adminService.listClaimDocuments(claimId),
+    enabled: !!claimId,
+  });
+
   const updateStatus = useMutation({
     mutationFn: (status: ClaimStatus) => adminService.updateClaimStatus(claimId, status),
     onSuccess: async () => {
@@ -71,6 +78,23 @@ export default function AdminClaimDetails() {
     },
     onError: () => setMsg("Erreur lors de l’ajout de l’étape."),
   });
+
+  const downloadDoc = async (docId: string | number) => {
+    try {
+      const res = await adminService.downloadClaimDocument(claimId, docId);
+      const blob = new Blob([res.data], { type: res.contentType });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.fileName || 'document';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      setMsg('Erreur lors du téléchargement du document.');
+    }
+  };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<StepForm>({
     resolver: zodResolver(stepSchema),
@@ -141,6 +165,25 @@ export default function AdminClaimDetails() {
             </Button>
           </Stack>
         </Stack>
+      </Paper>
+
+      <Paper sx={{ p: 2 }}>
+        <Typography sx={{ fontWeight: 900 }}>Documents</Typography>
+
+        {docsQuery.isLoading ? (
+          <Typography>Chargement des documents...</Typography>
+        ) : docsQuery.isError ? (
+          <Typography color="error">Impossible de charger les documents.</Typography>
+        ) : (
+          (docsQuery.data ?? []).map((d: any) => (
+            <Stack key={d.id} direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 1 }}>
+              <Typography>{d.fileName}</Typography>
+              <Button size="small" startIcon={<CloudDownloadIcon />} onClick={() => downloadDoc(d.id)}>
+                Télécharger
+              </Button>
+            </Stack>
+          ))
+        )}
       </Paper>
 
       <TimelineSteps steps={steps} />

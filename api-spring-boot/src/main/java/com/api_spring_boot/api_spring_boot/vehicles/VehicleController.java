@@ -55,7 +55,7 @@ public class VehicleController {
             c.setNumContrat(generateContractNumber(savedVeh.getMatricule()));
             c.setType(req.typeContrat() == null ? "STANDARD" : req.typeContrat());
             c.setDate(LocalDate.now());
-            c.setValide(true);
+            c.setValide(false);
             c.setClient(client);
             c.setVehicule(savedVeh);
 
