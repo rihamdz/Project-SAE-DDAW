@@ -18,6 +18,7 @@ import ClaimDetails from "./pages/client/ClaimDetails";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminClaims from "./pages/admin/Claims";
 import AdminClaimDetails from "./pages/admin/ClaimDetails";
+import AdminContracts from "./pages/admin/Contracts";
 
 export default function App() {
   return (
@@ -45,7 +46,9 @@ export default function App() {
       <Route path="/admin" element={<AdminLayout />}>
   <Route path="dashboard" element={<AdminDashboard />} />
   <Route path="claims" element={<AdminClaims />} />
-<Route path="claims/:id" element={<AdminClaimDetails />} />
+  <Route path="claims/:id" element={<AdminClaimDetails />} />
+  <Route path="contracts" element={<AdminContracts />} />
+ 
   <Route index element={<Navigate to="/admin/dashboard" replace />} />
 </Route>
 

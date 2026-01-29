@@ -14,6 +14,7 @@ public class Vehicule {
     private String modele;
     private String marque;
     private Integer annee;
+    private Boolean active = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
@@ -42,6 +43,9 @@ public class Vehicule {
 
     public Integer getAnnee() { return annee; }
     public void setAnnee(Integer annee) { this.annee = annee; }
+
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
 
     public Client getProprietaire() { return proprietaire; }
     public void setProprietaire(Client proprietaire) { this.proprietaire = proprietaire; }

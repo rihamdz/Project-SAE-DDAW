@@ -33,5 +33,26 @@ export const adminService = {
     const { data } = await api.post<ClaimStep>(`/admin/claims/${id}/steps`, payload);
     return data;
   },
+
+  // Contracts (admin)
+  async listContracts(): Promise<any[]> {
+    const { data } = await api.get<any[]>("/admin/contracts");
+    return data;
+  },
+
+  async validateContract(num: string) {
+    const { data } = await api.patch(`/admin/contracts/${encodeURIComponent(num)}/validate`);
+    return data;
+  },
+
+  async rejectContract(num: string) {
+    const { data } = await api.patch(`/admin/contracts/${encodeURIComponent(num)}/reject`);
+    return data;
+  },
+
+  async downloadContractPdf(num: string) {
+    const { data } = await api.get(`/admin/contracts/${encodeURIComponent(num)}/pdf`, { responseType: 'arraybuffer' });
+    return data;
+  }
 };
 

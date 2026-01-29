@@ -90,4 +90,5 @@ export const claimService = {
   listDocuments,
   downloadDocument,
   uploadDocument,
+    
 };

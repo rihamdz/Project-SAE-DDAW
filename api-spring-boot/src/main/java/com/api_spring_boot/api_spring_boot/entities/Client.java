@@ -2,6 +2,8 @@ package com.api_spring_boot.api_spring_boot.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.Getter;
+
 import java.util.List;
 
 @Entity
@@ -11,6 +13,13 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;          // CLIENT_ID
 
+    public Client(Long id, String adresse) {
+        this.id = id;
+        this.adresse = adresse;
+    }
+    public Client() {
+        //TODO Auto-generated constructor stub
+    }
     private String nom;
     private String prenom;
     private String adresse;
@@ -36,7 +45,7 @@ public class Client {
     public String getPrenom() { return prenom; }
     public void setPrenom(String prenom) { this.prenom = prenom; }
 
-    public String getAdresse() { return adresse; }
+    public String getEmail() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
 
     public String getTelephone() { return telephone; }

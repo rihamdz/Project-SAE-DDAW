@@ -32,6 +32,7 @@ export default function AdminLayout() {
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <Button component={Link} to="/admin/dashboard" variant="text">Dashboard</Button>
               <Button component={Link} to="/admin/claims" variant="text">Sinistres</Button>
+              <Button component={Link} to="/admin/contracts" variant="text">Contrats</Button>
               <Button component={Link} to="/admin/clients" variant="text" disabled>
                 Clients (plus tard)
               </Button>

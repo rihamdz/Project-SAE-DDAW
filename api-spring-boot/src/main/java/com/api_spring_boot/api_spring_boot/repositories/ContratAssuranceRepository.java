@@ -13,4 +13,5 @@ public interface ContratAssuranceRepository extends JpaRepository<ContratAssuran
 
     boolean existsByVehiculeMatricule(String matricule);
     Optional<ContratAssurance> findByVehiculeMatriculeAndClientId(String matricule, Long clientId);
+    List<ContratAssurance> findByValideFalseOrValideIsNullOrderByDateDesc();
 }

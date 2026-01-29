@@ -19,8 +19,10 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-export default function AccidentCreate() {
+type Props = {
+  onSuccess?: () => void;
+};
+export default function AccidentCreate({ onSuccess }: Props) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -31,6 +33,8 @@ export default function AccidentCreate() {
     queryFn: vehicleService.getMyVehicles,
   });
 
+
+
   const mutation = useMutation({
     mutationFn: async (payload: FormValues) => {
       if (!file) throw new Error("Document obligatoire");
@@ -38,7 +42,7 @@ export default function AccidentCreate() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["myClaims"] });
-      navigate("/client/accidents", { replace: true });
+      navigate("/clients/accidents", { replace: true });
     },
     onError: (err: any) => {
       const msg =
@@ -124,7 +128,7 @@ export default function AccidentCreate() {
               {...register("description")}
             />
 
-            {/* ✅ Upload obligatoire */}
+            {/*  Upload obligatoire */}
             <Button variant="outlined" component="label">
               {file ? `Document: ${file.name}` : "Ajouter le document (obligatoire)"}
               <input

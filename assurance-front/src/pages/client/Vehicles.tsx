@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -9,6 +10,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import DataTable, { type Column } from "../../components/DataTable";
 import SearchBar from "../../components/SearchBar";
@@ -30,6 +32,11 @@ async function uploadContractPdf(matricule: string, file: File) {
   return data;
 }
 
+// ✅ DELETE vehicle (matricule = id)
+async function deleteVehicle(matricule: string) {
+  await api.delete(`/clients/me/vehicles/${encodeURIComponent(matricule)}`);
+}
+
 export default function Vehicles() {
   const qc = useQueryClient();
 
@@ -40,7 +47,7 @@ export default function Vehicles() {
 
   const [search, setSearch] = useState("");
 
-  // dialog state
+  // dialog add state
   const [open, setOpen] = useState(false);
   const [matricule, setMatricule] = useState("");
   const [marque, setMarque] = useState("");
@@ -50,9 +57,13 @@ export default function Vehicles() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formOk, setFormOk] = useState<string | null>(null);
 
+  // ✅ dialog delete state
+  const [openDelete, setOpenDelete] = useState(false);
+  const [selectedMatricule, setSelectedMatricule] = useState<string>("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const addMutation = useMutation({
     mutationFn: async () => {
-      // 1) add vehicle
       const created = await vehicleService.addMyVehicle({
         matricule: matricule.trim(),
         marque: marque.trim(),
@@ -60,7 +71,6 @@ export default function Vehicles() {
         annee: Number(annee),
       });
 
-      // 2) upload pdf if provided
       if (pdfFile) {
         await uploadContractPdf(matricule.trim(), pdfFile);
       }
@@ -70,7 +80,6 @@ export default function Vehicles() {
     onSuccess: async () => {
       setFormOk(pdfFile ? "Véhicule ajouté + contrat PDF uploadé ✅" : "Véhicule ajouté ✅");
 
-      // reset fields
       setMatricule("");
       setMarque("");
       setModele("");
@@ -78,20 +87,37 @@ export default function Vehicles() {
       setPdfFile(null);
       setFormError(null);
 
-      // refresh lists
       await qc.invalidateQueries({ queryKey: ["myVehicles"] });
       await qc.invalidateQueries({ queryKey: ["myContracts"] });
 
-      // close dialog after a short moment (optional)
       setOpen(false);
       setFormOk(null);
     },
     onError: (err: any) => {
-      // si vehicle ajouté mais upload pdf échoue, tu peux voir err.response...
       setFormOk(null);
       setFormError(
         err?.response?.data?.message ||
           "Impossible d’ajouter le véhicule (ou d’uploader le PDF). Vérifie les champs / immatriculation."
+      );
+    },
+  });
+
+  // ✅ mutation delete
+  const deleteMutation = useMutation({
+    mutationFn: (m: string) => deleteVehicle(m),
+    onSuccess: async () => {
+      setOpenDelete(false);
+      setSelectedMatricule("");
+      setDeleteError(null);
+
+      await qc.invalidateQueries({ queryKey: ["myVehicles"] });
+      await qc.invalidateQueries({ queryKey: ["myContracts"] });
+      await qc.invalidateQueries({ queryKey: ["myClaims"] }); // au cas où
+    },
+    onError: (err: any) => {
+      setDeleteError(
+        err?.response?.data?.message ||
+          "Impossible de supprimer ce véhicule (peut-être lié à un contrat/claim)."
       );
     },
   });
@@ -119,8 +145,37 @@ export default function Vehicles() {
   const columns: Column<Vehicle>[] = [
     { key: "brand", header: "Marque", render: (v: any) => v.marque ?? v.brand ?? "—" },
     { key: "model", header: "Modèle", render: (v: any) => v.modele ?? v.model ?? "—" },
-    { key: "plate", header: "Immatriculation", render: (v: any) => v.matricule ?? v.plateNumber ?? "—" },
+    {
+      key: "plate",
+      header: "Immatriculation",
+      render: (v: any) => v.matricule ?? v.plateNumber ?? "—",
+    },
     { key: "year", header: "Année", render: (v: any) => v.annee ?? v.year ?? "—" },
+
+    // ✅ Actions (Delete)
+    {
+      key: "actions",
+      header: "Actions",
+      render: (v: any) => {
+        const plate = (v.matricule ?? v.plateNumber ?? "") as string;
+        return (
+          <Button
+            size="small"
+            color="error"
+            variant="outlined"
+            startIcon={<DeleteIcon />}
+            onClick={() => {
+              setDeleteError(null);
+              setSelectedMatricule(plate);
+              setOpenDelete(true);
+            }}
+            disabled={!plate}
+          >
+            Supprimer
+          </Button>
+        );
+      },
+    },
   ];
 
   if (isLoading) return <SkeletonTable rows={7} />;
@@ -151,11 +206,7 @@ export default function Vehicles() {
 
       <Paper sx={{ p: 2 }}>
         <Stack spacing={2}>
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder="Rechercher par marque, modèle, immatriculation…"
-          />
+          <SearchBar value={search} onChange={setSearch} placeholder="Rechercher par marque, modèle, immatriculation…" />
 
           <Typography variant="body2" color="text.secondary">
             {filteredRows.length} véhicule(s)
@@ -182,21 +233,9 @@ export default function Vehicles() {
               fullWidth
             />
 
-            <TextField
-              label="Marque"
-              value={marque}
-              onChange={(e) => setMarque(e.target.value)}
-              placeholder="Peugeot"
-              fullWidth
-            />
+            <TextField label="Marque" value={marque} onChange={(e) => setMarque(e.target.value)} placeholder="Peugeot" fullWidth />
 
-            <TextField
-              label="Modèle"
-              value={modele}
-              onChange={(e) => setModele(e.target.value)}
-              placeholder="208"
-              fullWidth
-            />
+            <TextField label="Modèle" value={modele} onChange={(e) => setModele(e.target.value)} placeholder="208" fullWidth />
 
             <TextField
               label="Année"
@@ -207,19 +246,11 @@ export default function Vehicles() {
               inputProps={{ min: 1950, max: new Date().getFullYear() + 1 }}
             />
 
-            {/* ✅ Upload PDF contrat */}
+            {/* Upload PDF contrat */}
             <Stack direction="row" spacing={2} alignItems="center">
-              <Button
-                variant="outlined"
-                component="label"
-              >
+              <Button variant="outlined" component="label">
                 {pdfFile ? "PDF sélectionné ✅" : "Choisir PDF contrat (optionnel)"}
-                <input
-                  hidden
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-                />
+                <input hidden type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} />
               </Button>
 
               {pdfFile ? (
@@ -255,6 +286,58 @@ export default function Vehicles() {
             }}
           >
             {addMutation.isPending ? "Ajout..." : "Ajouter"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ✅ Dialog Delete */}
+      <Dialog
+        open={openDelete}
+        onClose={() => {
+          if (!deleteMutation.isPending) {
+            setOpenDelete(false);
+            setSelectedMatricule("");
+            setDeleteError(null);
+          }
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Supprimer le véhicule</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            {deleteError && <Alert severity="error">{deleteError}</Alert>}
+
+            <Typography>
+              Tu es sûre de vouloir supprimer le véhicule : <b>{selectedMatricule}</b> ?
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Si ce véhicule est lié à un contrat ou à un sinistre, la suppression peut échouer.
+            </Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => {
+              setOpenDelete(false);
+              setSelectedMatricule("");
+              setDeleteError(null);
+            }}
+            disabled={deleteMutation.isPending}
+          >
+            Annuler
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            startIcon={<DeleteIcon />}
+            disabled={!selectedMatricule || deleteMutation.isPending}
+            onClick={() => {
+              setDeleteError(null);
+              deleteMutation.mutate(selectedMatricule);
+            }}
+          >
+            {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
           </Button>
         </DialogActions>
       </Dialog>

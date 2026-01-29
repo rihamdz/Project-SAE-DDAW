@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/clients/me")
@@ -29,7 +30,10 @@ public class ClientMeController {
     @GetMapping("/vehicles")
     public List<Vehicule> myVehicles(Authentication auth) {
         Client client = currentUserService.getClientOrThrow(auth);
-        return client.getVehicules();
+        // Return only active vehicles
+        return client.getVehicules().stream()
+                .filter(v -> v.getActive() == null || v.getActive())
+                .collect(Collectors.toList());
     }
 
     // ✅ DTO request (simple)
