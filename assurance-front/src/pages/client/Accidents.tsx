@@ -14,6 +14,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 import SkeletonTable from "../../components/SkeletonTable";
 import ErrorState from "../../components/ErrorState";
@@ -27,6 +28,8 @@ import AccidentCreate from "./AccidentCreate";
 const Accidents = () => {
     const [search, setSearch] = useState("");
     const [openCreate, setOpenCreate] = useState(false);
+    const navigate = useNavigate();
+
     const accidentsQuery = useQuery({
         queryKey: ["myAccidents"],
         queryFn: claimService.getMyAccidents,
@@ -46,6 +49,19 @@ const Accidents = () => {
         { key: "accidentDate", header: "Date", render: (c) => c.accidentDate },
         { key: "vehicleMatricule", header: "Véhicule", render: (c) => c.vehicleMatricule ?? "—" },
         { key: "status", header: "Statut", render: (c) => c.status },
+        { 
+          key: "actions", 
+          header: "Actions", 
+          render: (c) => (
+            <Button 
+              size="small" 
+              variant="outlined"
+              onClick={() => navigate(`/client/accidents/${c.id}`)}
+            >
+              Détails
+            </Button>
+          )
+        },
     ];
     if (accidentsQuery.isLoading)
         return <SkeletonTable rows={7}/>;
@@ -93,12 +109,7 @@ const Accidents = () => {
         </DialogTitle>
 
         <DialogContent dividers>
-        
-          <AccidentCreate onSuccess={() => {
-            setOpenCreate(false);
-            accidentsQuery.refetch(); // ou invalidateQueries dans AccidentCreate
-        }}/>
-
+          <AccidentCreate onSuccess={() => setOpenCreate(false)} />
         </DialogContent>
       </Dialog>
     </Stack>);

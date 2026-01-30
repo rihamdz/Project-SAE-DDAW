@@ -28,6 +28,7 @@ public class ClaimController {
     private final ClaimStepRepository stepRepo;
     private final ClaimDocumentRepository docRepo;
     private final VehiculeRepository vehiculeRepo;
+    private final OtherVehicleRepository otherVehicleRepo;
     private final ObjectMapper objectMapper;
 
     public ClaimController(CurrentUserService currentUser,
@@ -35,16 +36,18 @@ public class ClaimController {
                            ClaimStepRepository stepRepo,
                            ClaimDocumentRepository docRepo,
                            VehiculeRepository vehiculeRepo,
+                           OtherVehicleRepository otherVehicleRepo,
                            ObjectMapper objectMapper) {
         this.currentUser = currentUser;
         this.claimRepo = claimRepo;
         this.stepRepo = stepRepo;
         this.docRepo = docRepo;
         this.vehiculeRepo = vehiculeRepo;
+        this.otherVehicleRepo = otherVehicleRepo;
         this.objectMapper = objectMapper;
     }
 
-    // ✅ Mes claims
+    //  Mes claims
     @GetMapping
     public List<ClaimDto> myClaims(Authentication auth) {
         Client client = currentUser.getClientOrThrow(auth);
@@ -52,13 +55,27 @@ public class ClaimController {
                 .stream().map(this::toDto).toList();
     }
 
-    // ✅ Détail d’un claim
+    //  Détail d’un claim
     @GetMapping("/{id}")
     public ClaimDto getOne(Authentication auth, @PathVariable Long id) {
         return toDto(getClaimForCurrentClientOrThrow(auth, id));
     }
-
-    // ✅ Créer claim + document OBLIGATOIRE (multipart)
+    //  Étapes d'un claim
+    @GetMapping("/{id}/steps")
+    public List<ClaimStepDto> getSteps(Authentication auth, @PathVariable Long id) {
+        Claim claim = getClaimForCurrentClientOrThrow(auth, id);
+        return stepRepo.findByClaimOrderByCreatedAtAsc(claim)
+                .stream()
+                .map(s -> new ClaimStepDto(
+                        s.getId(),
+                        s.getStepName(),
+                        s.getStepStatus(),
+                        s.getComment(),
+                        s.getCreatedAt() == null ? null : s.getCreatedAt().toString()
+                ))
+                .toList();
+    }
+    // Créer claim + document OBLIGATOIRE (multipart)
     // IMPORTANT: on reçoit "data" en String pour éviter 415, puis on parse en JSON
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ClaimDto create(Authentication auth,
@@ -71,7 +88,7 @@ public class ClaimController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document obligatoire");
         }
 
-        // ✅ parse JSON -> CreateClaimRequest
+        //  parse JSON -> CreateClaimRequest
         CreateClaimRequest req;
         try {
             req = objectMapper.readValue(data, CreateClaimRequest.class);
@@ -82,7 +99,7 @@ public class ClaimController {
             );
         }
 
-        // ✅ validations manuelles (car on n'a plus @Valid automatique ici)
+        //  validations manuelles (car on n'a plus @Valid automatique ici)
         if (req.vehicleId() == null || req.vehicleId().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "vehicleId obligatoire");
         }
@@ -93,13 +110,13 @@ public class ClaimController {
         Vehicule veh = vehiculeRepo.findById(req.vehicleId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehicle not found"));
 
-        // 🔒 Contrat obligatoire + actif (valide == true)
+        // Contrat obligatoire + actif (valide == true)
         ContratAssurance contrat = veh.getContrat();
         if (contrat == null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Aucun contrat associé à ce véhicule");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Contrat non valide - Aucun contrat associé à ce véhicule");
         }
         if (contrat.getValide() == null || !contrat.getValide()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Contrat inactif : déclaration impossible");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Contrat non valide - Contrat inactif : déclaration impossible");
         }
 
         Claim claim = Claim.builder()
@@ -123,7 +140,7 @@ public class ClaimController {
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // ✅ sauvegarde doc (obligatoire)
+        //  sauvegarde doc (obligatoire)
         ClaimDocument doc = ClaimDocument.builder()
                 .claim(saved)
                 .fileName(file.getOriginalFilename() == null ? "file" : file.getOriginalFilename())
@@ -137,7 +154,7 @@ public class ClaimController {
         return toDto(saved);
     }
 
-    // ✅ Liste docs
+    //  Liste docs
     @GetMapping("/{id}/documents")
     public List<DocumentDto> listDocuments(Authentication auth, @PathVariable Long id) {
         Claim claim = getClaimForCurrentClientOrThrow(auth, id);
@@ -153,7 +170,7 @@ public class ClaimController {
                 .toList();
     }
 
-    // ✅ Télécharger doc
+    // Télécharger doc
     @GetMapping("/{id}/documents/{docId}")
     public ResponseEntity<byte[]> download(Authentication auth,
                                            @PathVariable Long id,
@@ -209,7 +226,68 @@ public class ClaimController {
         );
     }
 
-    // ---------------- helpers ----------------
+    // ========== TIERS IMPLIQUÉS (Other Vehicles) ==========
+
+    // Lister les tiers impliqués d'un accident
+    @GetMapping("/{id}/other-vehicles")
+    public List<OtherVehicleDto> getOtherVehicles(Authentication auth, @PathVariable Long id) {
+        Claim claim = getClaimForCurrentClientOrThrow(auth, id);
+        return claim.getOtherVehicles().stream()
+                .map(this::otherVehicleToDto)
+                .toList();
+    }
+
+    // Ajouter un tiers impliqué à un accident
+    @PostMapping("/{id}/other-vehicles")
+    public OtherVehicleDto addOtherVehicle(Authentication auth,
+                                           @PathVariable Long id,
+                                           @RequestBody AddOtherVehicleRequest req) {
+        Claim claim = getClaimForCurrentClientOrThrow(auth, id);
+
+        if (req.matricule() == null || req.matricule().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Matricule obligatoire");
+        }
+
+        if (req.ownerName() == null || req.ownerName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nom du propriétaire obligatoire");
+        }
+
+        // Chercher ou créer le tiers
+        OtherVehicle otherVehicle = otherVehicleRepo.findByMatricule(req.matricule())
+                .orElseGet(() -> OtherVehicle.builder()
+                        .matricule(req.matricule())
+                        .marque(req.brand())
+                        .modele(req.model())
+                        .ownerName(req.ownerName())
+                        .ownerPhone(req.ownerPhone())
+                        .ownerEmail(req.ownerEmail())
+                        .insuranceNumber(req.insuranceNumber())
+                        .build());
+
+        // Ajouter à la relation many-to-many
+        if (!claim.getOtherVehicles().contains(otherVehicle)) {
+            claim.getOtherVehicles().add(otherVehicle);
+            claimRepo.save(claim);
+        }
+
+        return otherVehicleToDto(otherVehicle);
+    }
+
+    // Retirer un tiers impliqué d'un accident
+    @DeleteMapping("/{id}/other-vehicles/{vehicleId}")
+    public void removeOtherVehicle(Authentication auth,
+                                   @PathVariable Long id,
+                                   @PathVariable Long vehicleId) {
+        Claim claim = getClaimForCurrentClientOrThrow(auth, id);
+
+        OtherVehicle otherVehicle = otherVehicleRepo.findById(vehicleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tiers not found"));
+
+        claim.getOtherVehicles().remove(otherVehicle);
+        claimRepo.save(claim);
+    }
+
+    // ========== HELPERS ==========
 
     private Claim getClaimForCurrentClientOrThrow(Authentication auth, Long claimId) {
         Client client = currentUser.getClientOrThrow(auth);
@@ -233,6 +311,19 @@ public class ClaimController {
                 c.getLocation(),
                 c.getDescription(),
                 c.getVehicle() == null ? null : c.getVehicle().getMatricule()
+        );
+    }
+
+    private OtherVehicleDto otherVehicleToDto(OtherVehicle ov) {
+        return new OtherVehicleDto(
+                ov.getId(),
+                ov.getMatricule(),
+                ov.getMarque(),
+                ov.getModele(),
+                ov.getOwnerName(),
+                ov.getOwnerPhone(),
+                ov.getOwnerEmail(),
+                ov.getInsuranceNumber()
         );
     }
 

@@ -17,6 +17,16 @@ export const contractService = {
     return data;
   },
 
+  downloadContractPdf: async (matricule: string) => {
+    const res = await api.get(`/contracts/vehicle/${encodeURIComponent(matricule)}/pdf`, { responseType: 'arraybuffer' });
+    const contentType = res.headers['content-type'] || 'application/pdf';
+    const cd = res.headers['content-disposition'] || '';
+    let fileName = 'contract.pdf';
+    const m = /filename="?([^";]+)"?/.exec(cd);
+    if (m) fileName = m[1];
+    return { data: res.data, contentType, fileName };
+  },
+
   downloadContractPdfUrl: (matricule: string) =>
     `${import.meta.env.VITE_API_URL ?? "http://localhost:8080"}/api/contracts/vehicle/${matricule}/pdf`,
 };

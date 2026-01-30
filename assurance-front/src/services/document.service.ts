@@ -9,9 +9,8 @@ export const documentService = {
     const formData = new FormData();
     formData.append("file", file);
 
-    // 🔴 URL PLACEHOLDER — À MODIFIER PLUS TARD
     const { data } = await api.post<ClaimDocument>(
-      `/CLAIM_DOCUMENT_UPLOAD_URL/${claimId}`,
+      `/clients/me/claims/${claimId}/documents`,
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
@@ -20,9 +19,8 @@ export const documentService = {
   },
 
   async getDocuments(claimId: string | number): Promise<ClaimDocument[]> {
-    // 🔴 URL PLACEHOLDER — À MODIFIER PLUS TARD
     const { data } = await api.get<ClaimDocument[]>(
-      `/CLAIM_DOCUMENT_LIST_URL/${claimId}`
+      `/clients/me/claims/${claimId}/documents`
     );
     return data;
   },

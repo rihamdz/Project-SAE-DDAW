@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { RequireAuth, RequireRole } from "./auth/RequireAuth";
+import { RequireAuth } from "./auth/RequireAuth";
 
 import AuthLayout from "./layouts/AuthLayout";
 import ClientLayout from "./layouts/ClientLayout";
@@ -13,6 +13,7 @@ import Vehicles from "./pages/client/Vehicles";
 import Contracts from "./pages/client/Contracts";
 import Accidents from "./pages/client/Accidents";
 import AccidentCreate from "./pages/client/AccidentCreate";
+import AccidentDetails from "./pages/client/AccidentDetails";
 import ClaimDetails from "./pages/client/ClaimDetails";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -38,6 +39,7 @@ export default function App() {
   <Route path="contracts" element={<Contracts />} />
   <Route path="accidents" element={<Accidents />} />
   <Route path="accidents/new" element={<AccidentCreate />} />
+  <Route path="accidents/:id" element={<AccidentDetails />} />
   <Route path="claims/:id" element={<ClaimDetails />} />
 </Route>
 

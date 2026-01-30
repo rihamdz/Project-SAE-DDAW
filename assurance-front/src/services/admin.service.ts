@@ -1,6 +1,7 @@
 import { api } from "../api/axios";
 import type { Claim, ClaimStatus } from "../types/claim";
 import type { ClaimStep, StepStatus } from "../types/claimStep";
+import type { OtherVehicleDto, AddOtherVehicleRequest } from "./otherVehicle.service";
 
 export type AddStepPayload = {
   stepName: string;
@@ -32,6 +33,30 @@ export const adminService = {
   async addClaimStep(id: string | number, payload: AddStepPayload): Promise<ClaimStep> {
     const { data } = await api.post<ClaimStep>(`/admin/claims/${id}/steps`, payload);
     return data;
+  },
+
+  // Tiers impliqués (Other Vehicles)
+  async getOtherVehicles(id: string | number): Promise<OtherVehicleDto[]> {
+    const { data } = await api.get<OtherVehicleDto[]>(`/admin/claims/${id}/other-vehicles`);
+    return data;
+  },
+
+  async addOtherVehicle(
+    id: string | number,
+    payload: AddOtherVehicleRequest
+  ): Promise<OtherVehicleDto> {
+    const { data } = await api.post<OtherVehicleDto>(
+      `/admin/claims/${id}/other-vehicles`,
+      payload
+    );
+    return data;
+  },
+
+  async removeOtherVehicle(
+    id: string | number,
+    vehicleId: string | number
+  ): Promise<void> {
+    await api.delete(`/admin/claims/${id}/other-vehicles/${vehicleId}`);
   },
 
   // Contracts (admin)

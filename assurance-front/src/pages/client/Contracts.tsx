@@ -96,10 +96,24 @@ export default function Contracts() {
             <Button
               size="small"
               variant="text"
-              component="a"
-              href={contractService.downloadContractPdfUrl(c.vehicleMatricule)}
-              target="_blank"
-              rel="noreferrer"
+              onClick={async () => {
+                try {
+                  const matricule = c.vehicleMatricule ?? c.vehicle?.matricule;
+                  if (!matricule) return;
+                  const res = await contractService.downloadContractPdf(matricule);
+                  const blob = new Blob([res.data], { type: res.contentType });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = res.fileName || "contract.pdf";
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+                } catch (e) {
+                  // ignore for now
+                }
+              }}
             >
               Télécharger
             </Button>

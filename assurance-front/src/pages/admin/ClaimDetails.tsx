@@ -18,13 +18,14 @@ import SkeletonTable from "../../components/SkeletonTable";
 import ErrorState from "../../components/ErrorState";
 import StatusChip from "../../components/StatusChip";
 import TimelineSteps from "../../components/TimelineSteps";
+import OtherVehicles from "../../components/OtherVehicles";
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 
 import type { ClaimStatus } from "../../types/claim";
 import type { StepStatus } from "../../types/claimStep";
 import { adminService } from "../../services/admin.service";
 
-const CLAIM_STATUSES: ClaimStatus[] = ["DECLARED", "IN_REVIEW", "APPROVED", "REJECTED", "CLOSED"];
+const CLAIM_STATUSES: ClaimStatus[] = ["PENDING", "DECLARED", "IN_PROGRESS", "RESOLVED", "REJECTED"];
 const STEP_STATUSES: StepStatus[] = ["PENDING", "IN_PROGRESS", "DONE", "REJECTED"];
 
 const stepSchema = z.object({
@@ -61,7 +62,7 @@ export default function AdminClaimDetails() {
   const updateStatus = useMutation({
     mutationFn: (status: ClaimStatus) => adminService.updateClaimStatus(claimId, status),
     onSuccess: async () => {
-      setMsg("Statut mis à jour ✅");
+      setMsg("Statut mis à jour ");
       await qc.invalidateQueries({ queryKey: ["adminClaim", claimId] });
       await qc.invalidateQueries({ queryKey: ["adminClaims"] });
       setTimeout(() => setMsg(null), 2000);
@@ -72,7 +73,7 @@ export default function AdminClaimDetails() {
   const addStep = useMutation({
     mutationFn: (payload: StepForm) => adminService.addClaimStep(claimId, payload),
     onSuccess: async () => {
-      setMsg("Étape ajoutée ✅");
+      setMsg("Étape ajoutée ");
       await qc.invalidateQueries({ queryKey: ["adminClaimSteps", claimId] });
       setTimeout(() => setMsg(null), 2000);
     },
@@ -185,6 +186,8 @@ export default function AdminClaimDetails() {
           ))
         )}
       </Paper>
+
+      <OtherVehicles claimId={claimId} isAdmin={true} />
 
       <TimelineSteps steps={steps} />
 

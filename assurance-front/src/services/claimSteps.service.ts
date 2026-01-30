@@ -3,7 +3,7 @@ import type { ClaimStep } from "../types/claimStep";
 
 export const claimStepsService = {
   async getSteps(claimId: string | number): Promise<ClaimStep[]> {
-    const { data } = await api.get<ClaimStep[]>(`/claims/${claimId}/steps`);
+    const { data } = await api.get<ClaimStep[]>(`/clients/me/claims/${claimId}/steps`);
     return data;
   },
 };

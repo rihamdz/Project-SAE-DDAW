@@ -1,5 +1,6 @@
 // src/services/claim.service.ts
 import { api } from "../api/axios";
+import type { Claim } from "../types/claim";
 
 export type ClaimStatus =
   | "PENDING"
@@ -32,14 +33,26 @@ export type DocumentDto = {
   uploadedAt: string | null;
 };
 
-async function getMyClaims(): Promise<ClaimDto[]> {
+async function getMyClaims(): Promise<Claim[]> {
   const { data } = await api.get("/clients/me/claims");
-  return data;
+
+  // Transforme ClaimDto -> Claim
+  return data.map((c: ClaimDto) => ({
+    ...c,
+    claimNumber: c.claimNumber != null ? String(c.claimNumber) : undefined,
+  }));
 }
+
+
 
 // alias accidents = claims
 async function getMyAccidents(): Promise<ClaimDto[]> {
   const { data } = await api.get("/clients/me/claims");
+  return data;
+}
+
+async function getClaim(claimId: string | number): Promise<ClaimDto> {
+  const { data } = await api.get(`/clients/me/claims/${claimId}`);
   return data;
 }
 
@@ -86,9 +99,9 @@ async function uploadDocument(claimId: number, file: File): Promise<DocumentDto>
 export const claimService = {
   getMyClaims,
   getMyAccidents,
+  getClaim,
   createWithRequiredDoc,
   listDocuments,
   downloadDocument,
   uploadDocument,
-    
 };

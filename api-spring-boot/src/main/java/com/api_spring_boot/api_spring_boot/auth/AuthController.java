@@ -8,6 +8,8 @@ import com.api_spring_boot.api_spring_boot.repositories.ClientRepository;
 import com.api_spring_boot.api_spring_boot.repositories.UserAccountRepository;
 import com.api_spring_boot.api_spring_boot.security.JwtService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -59,9 +61,13 @@ public class AuthController {
 
     @GetMapping("/me")
     public AuthResponse.UserDto me(Authentication authentication) {
-        String email = authentication.getName();
-        var user = userRepo.findByEmail(email).orElseThrow();
-        return new AuthResponse.UserDto(user.getId(), user.getEmail(), user.getFullName(), user.getRole());
+                if (authentication == null || authentication.getName() == null) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+                }
+
+                String email = authentication.getName();
+                var user = userRepo.findByEmail(email).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                return new AuthResponse.UserDto(user.getId(), user.getEmail(), user.getFullName(), user.getRole());
     }
     @PostMapping("/register")
     public AuthResponse register(@RequestBody @Valid RegisterRequest req) {

@@ -3,16 +3,16 @@ import type { ClaimStatus } from "../types/claim";
 
 function labelOf(status: ClaimStatus) {
   switch (status) {
+    case "PENDING":
+      return "En attente";
     case "DECLARED":
       return "Déclaré";
-    case "IN_REVIEW":
+    case "IN_PROGRESS":
       return "En cours";
-    case "APPROVED":
-      return "Accepté";
+    case "RESOLVED":
+      return "Résolu";
     case "REJECTED":
       return "Refusé";
-    case "CLOSED":
-      return "Clôturé";
     default:
       return status;
   }
@@ -20,21 +20,23 @@ function labelOf(status: ClaimStatus) {
 
 function colorOf(status: ClaimStatus): "default" | "primary" | "success" | "warning" | "error" {
   switch (status) {
+    case "PENDING":
+      return "warning";
     case "DECLARED":
       return "primary";
-    case "IN_REVIEW":
+    case "IN_PROGRESS":
       return "warning";
-    case "APPROVED":
+    case "RESOLVED":
       return "success";
     case "REJECTED":
       return "error";
-    case "CLOSED":
-      return "default";
     default:
       return "default";
   }
 }
 
-export default function StatusChip({ status }: { status: ClaimStatus }) {
+export function StatusChip({ status }: { status: ClaimStatus }) {
   return <Chip size="small" label={labelOf(status)} color={colorOf(status)} />;
 }
+
+export default StatusChip;

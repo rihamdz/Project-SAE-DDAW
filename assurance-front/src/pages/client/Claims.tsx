@@ -1,4 +1,11 @@
-import { Button, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import {
+  Button,
+  Paper,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
@@ -42,8 +49,14 @@ export default function Claims() {
 
     const byFilter = rows.filter((c) => {
       if (filter === "ALL") return true;
-      if (filter === "OPEN") return c.status === "DECLARED" || c.status === "IN_REVIEW";
-      if (filter === "CLOSED") return c.status === "CLOSED";
+      if (filter === "OPEN")
+        return (
+          c.status === "DECLARED" ||
+          c.status === "IN_PROGRESS" ||
+          c.status === "PENDING"
+        );
+      if (filter === "CLOSED")
+        return c.status === "RESOLVED" || c.status === "REJECTED";
       return c.status === filter;
     });
 
@@ -58,15 +71,32 @@ export default function Claims() {
       ]
         .join(" ")
         .toLowerCase();
+
       return hay.includes(q);
     });
   }, [rows, search, filter]);
 
   const columns: Column<Claim>[] = [
-    { key: "number", header: "N°", render: (c) => c.claimNumber ?? c.id },
-    { key: "date", header: "Date accident", render: (c) => c.accidentDate },
-    { key: "loc", header: "Lieu", render: (c) => c.location },
-    { key: "status", header: "Statut", render: (c) => <StatusChip status={c.status} /> },
+    {
+      key: "number",
+      header: "N°",
+      render: (c) => c.claimNumber ?? c.id,
+    },
+    {
+      key: "date",
+      header: "Date accident",
+      render: (c) => c.accidentDate,
+    },
+    {
+      key: "loc",
+      header: "Lieu",
+      render: (c) => c.location,
+    },
+    {
+      key: "status",
+      header: "Statut",
+      render: (c) => <StatusChip status={c.status} />,
+    },
     {
       key: "actions",
       header: "Action",
@@ -112,8 +142,8 @@ export default function Claims() {
             <ToggleButton value="OPEN">Ouverts</ToggleButton>
             <ToggleButton value="CLOSED">Clôturés</ToggleButton>
             <ToggleButton value="DECLARED">Déclarés</ToggleButton>
-            <ToggleButton value="IN_REVIEW">En cours</ToggleButton>
-            <ToggleButton value="APPROVED">Acceptés</ToggleButton>
+            <ToggleButton value="IN_PROGRESS">En cours</ToggleButton>
+            <ToggleButton value="RESOLVED">Résolus</ToggleButton>
             <ToggleButton value="REJECTED">Refusés</ToggleButton>
           </ToggleButtonGroup>
 

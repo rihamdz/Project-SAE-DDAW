@@ -14,8 +14,8 @@ export default function AdminDashboard() {
   if (q.isLoading) return <Loading />;
 
   const claims = q.data ?? [];
-  const opened = claims.filter((c) => c.status === "DECLARED" || c.status === "IN_REVIEW").length;
-  const closed = claims.filter((c) => c.status === "CLOSED").length;
+  const opened = claims.filter((c) => c.status === "DECLARED" || c.status === "IN_PROGRESS" || c.status === "PENDING").length;
+  const closed = claims.filter((c) => c.status === "RESOLVED" || c.status === "REJECTED").length;
 
   return (
     <Stack spacing={2}>
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
           <StatCard label="Clôturés" value={closed} />
         </Grid>
         <Grid  size={{xs:12 ,sm:6 , md:3}} >
-          <StatCard label="En cours" value={claims.filter((c) => c.status === "IN_REVIEW").length} />
+          <StatCard label="En cours" value={claims.filter((c) => c.status === "IN_PROGRESS").length} />
         </Grid>
       </Grid>
     </Stack>

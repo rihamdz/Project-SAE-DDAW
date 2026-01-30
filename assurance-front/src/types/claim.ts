@@ -1,10 +1,10 @@
-export type ClaimStatus = "DECLARED" | "IN_REVIEW" | "APPROVED" | "REJECTED" | "CLOSED";
 
+export type ClaimStatus = "PENDING" | "DECLARED" | "IN_PROGRESS" | "RESOLVED" | "REJECTED"; 
 export interface Claim {
   id: number | string;
-  claimNumber?: string;
+  claimNumber?: string | number | null;
   status: ClaimStatus;
-  accidentDate: string;     // ISO date: "2026-01-17"
+  accidentDate: string;
   location: string;
   description?: string;
   vehicleId?: number | string;
