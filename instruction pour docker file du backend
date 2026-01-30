@@ -1,0 +1,34 @@
+# Projet Assurance - Frontend & Backend
+
+## Description
+
+Ce projet est une application de gestion de sinistres (assurances) pour les clients.  
+Il est composé de :
+
+- **Frontend** : React + Vite + Material UI  
+  Permet aux clients de déclarer et suivre leurs sinistres.
+- **Backend** : Spring Boot REST API  
+  Gère les sinistres et les documents associés.
+- **Docker & Docker Hub** : pour déployer facilement le projet.
+
+---
+
+## Prérequis
+
+- [Docker](https://www.docker.com/get-started) et [Docker Compose](https://docs.docker.com/compose/install/)
+- Accès à Internet pour récupérer les images depuis Docker Hub
+
+---
+
+## Utilisation rapide avec Docker Hub
+
+Les images sont publiées sur Docker Hub :
+
+- Frontend : `rihamdz/assurance-frontend:1.0`  
+- Backend : `rihamdz/assurance-api:1.0`  
+
+### Étape 1 : Récupérer les images
+
+```bash
+docker pull rihamdz/assurance-frontend:1.0
+docker pull rihamdz/assurance-api:1.0
