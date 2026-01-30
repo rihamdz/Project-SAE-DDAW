@@ -1,0 +1,37 @@
+rojet API Spring Boot + Frontend React
+Description
+
+Ce projet est une application web pour la gestion de clients, véhicules, contrats et réclamations (claims). L’API est développée en Spring Boot avec JWT pour l’authentification, et le frontend en React avec Axios pour la communication avec l’API.
+
+Le projet distingue deux types d’utilisateurs :
+
+Client : peut consulter ses véhicules, contrats et créer des réclamations SI LE CONTRAT EST VALIDE .
+
+Admin : peut gérer  contrats et réclamations.
+
+Stack Technique
+Backend (Spring Boot)
+
+Java 17+
+
+Spring Boot
+
+Spring Security (JWT)
+
+JPA / Hibernate
+
+MYSQL
+
+Maven
+
+Frontend (React)
+
+React 18+
+
+TypeScript
+
+Axios pour les requêtes HTTP
+
+React Router pour la navigation
+
+LocalStorage pour stocker le JWT
